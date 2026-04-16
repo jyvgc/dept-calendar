@@ -26,10 +26,8 @@ header h1{font-size:1.1rem;}
 .cnav h2{font-size:1.2rem;font-weight:700;}
 .nbtn{background:#fff;border:1px solid #e2e8f0;border-radius:10px;width:36px;height:36px;font-size:1.2rem;cursor:pointer;}
 .cgrid{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.07);}
-/* ① 요일 헤더: 7등분 고정 */
 .chead{display:grid;grid-template-columns:repeat(7,1fr);background:#1a56db;}
 .chead span{text-align:center;padding:10px 4px;font-size:.75rem;font-weight:700;color:#fff;}
-/* ① 날짜 칸: 7등분 고정 + min-width:0 으로 넓이 고정 */
 .cbody{display:grid;grid-template-columns:repeat(7,1fr);}
 .cday{min-height:68px;min-width:0;overflow:hidden;border-right:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;padding:5px 3px;cursor:pointer;position:relative;}
 .cday:hover{background:#f0f4ff;}
@@ -37,27 +35,26 @@ header h1{font-size:1.1rem;}
 .cday.other .dn{color:#cbd5e1;}
 .cday.today .dn{background:#1a56db;color:#fff;border-radius:50%;}
 .dn{font-size:.82rem;font-weight:600;width:24px;height:24px;display:flex;align-items:center;justify-content:center;margin-bottom:2px;}
-/* ② 이벤트 점: 5글자 초과 시 ... 처리 */
 .edot{font-size:.68rem;color:#fff;border-radius:3px;padding:1px 4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;display:block;}
 .t-meeting{background:#7c3aed;}.t-deadline{background:#ef4444;}.t-event{background:#059669;}.t-other{background:#64748b;}
 .bl-meeting{border-left:4px solid #7c3aed;}.bl-deadline{border-left:4px solid #ef4444;}.bl-event{border-left:4px solid #059669;}.bl-other{border-left:4px solid #64748b;}
 .fab{position:fixed;bottom:28px;right:24px;width:56px;height:56px;border-radius:50%;background:#1a56db;color:#fff;border:none;font-size:1.8rem;cursor:pointer;box-shadow:0 4px 16px rgba(26,86,219,.4);z-index:200;}
 .stitle{font-size:1rem;font-weight:700;margin:24px 0 10px;}
-.elist{display:flex;flex-direction:column;gap:10px;}
+.elist{display:flex;flex-direction:column;gap:10px;margin-bottom:80px;}
 .ecard{background:#fff;border-radius:12px;padding:14px 16px;display:flex;gap:12px;box-shadow:0 1px 6px rgba(0,0,0,.07);cursor:pointer;}
+/* 지나간 일정 카드: 흐리게 */
+.ecard.past-card{opacity:.6;}
 .edate{font-size:.75rem;color:#64748b;min-width:48px;}
 .ebody h4{font-size:.93rem;font-weight:600;margin-bottom:2px;}
 .ebody p{font-size:.8rem;color:#64748b;}
 .tbadge{font-size:.68rem;border-radius:4px;padding:1px 6px;color:#fff;display:inline-block;margin-bottom:3px;}
 .empty{text-align:center;color:#64748b;padding:28px;}
-/* ③ 지나간 일정 토글 버튼 */
-.past-toggle{display:flex;align-items:center;justify-content:center;margin:10px 0;}
-.past-toggle button{background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:10px;padding:8px 18px;font-size:.85rem;color:#475569;cursor:pointer;font-weight:600;}
-.past-toggle button:hover{background:#e2e8f0;}
-#pastList{display:none;flex-direction:column;gap:10px;margin-top:8px;}
-#pastList.open{display:flex;}
-.past-label{font-size:.78rem;color:#94a3b8;text-align:center;padding:6px 0;font-weight:600;letter-spacing:.03em;}
-.mb-wrap{margin-bottom:80px;}
+/* 구분선 라벨 */
+.section-label{font-size:.75rem;color:#94a3b8;text-align:center;padding:6px 0 4px;font-weight:700;letter-spacing:.04em;display:flex;align-items:center;gap:8px;}
+.section-label::before,.section-label::after{content:"";flex:1;height:1px;background:#e2e8f0;}
+/* 지나간 일정 더보기 */
+.past-toggle{margin:4px 0 8px;text-align:center;}
+.past-toggle button{background:none;border:none;color:#94a3b8;font-size:.8rem;cursor:pointer;text-decoration:underline;}
 .mbg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;align-items:center;justify-content:center;padding:20px;}
 .mbg.open{display:flex;}
 .modal{background:#fff;border-radius:20px;width:100%;max-width:460px;padding:28px 24px;}
@@ -107,14 +104,8 @@ header h1{font-size:1.1rem;}
       </div>
       <div class="cbody" id="calBody"></div>
     </div>
-    <div class="stitle">&#128203; 이번 달 일정</div>
-    <div class="mb-wrap">
-      <div class="elist" id="evList"></div>
-      <div class="past-toggle" id="pastToggleWrap" style="display:none;">
-        <button id="pastToggleBtn">&#9660; 지나간 일정 보기</button>
-      </div>
-      <div id="pastList"></div>
-    </div>
+    <div class="stitle">&#128203; 일정 목록</div>
+    <div class="elist" id="evList"></div>
   </div>
   <button class="fab" id="fabBtn">+</button>
 </div>
@@ -167,9 +158,7 @@ var cm = new Date().getMonth();
 var allEvents = [];
 var editId = null;
 var TN = { meeting: "회의", deadline: "마감", event: "행사", other: "기타" };
-var pastOpen = false;
 
-// 로그인
 document.getElementById("loginBtn").onclick = function() {
   document.getElementById("loginBtn").disabled = true;
   document.getElementById("loadmsg").style.display = "block";
@@ -227,20 +216,6 @@ document.getElementById("cancelBtn").onclick = closeModal;
 document.getElementById("saveBtn").onclick = saveEvent;
 document.getElementById("deleteBtn").onclick = deleteEvent;
 document.getElementById("modalBg").onclick = function(e) { if (e.target === this) closeModal(); };
-
-// ③ 지나간 일정 토글
-document.getElementById("pastToggleBtn").onclick = function() {
-  pastOpen = !pastOpen;
-  var pastList = document.getElementById("pastList");
-  var btn = document.getElementById("pastToggleBtn");
-  if (pastOpen) {
-    pastList.classList.add("open");
-    btn.textContent = "▲ 지나간 일정 접기";
-  } else {
-    pastList.classList.remove("open");
-    btn.textContent = "▼ 지나간 일정 보기";
-  }
-};
 
 function openModal(dateStr) {
   editId = null;
@@ -316,14 +291,9 @@ function loadEvents() {
   });
 }
 
-// ② 캘린더 이벤트 점: 5글자 초과 시 잘라서 표시 (CSS ellipsis가 처리하지만 확실히 하기 위해)
-function truncateTitle(title) {
-  return title; // CSS overflow:hidden + text-overflow:ellipsis 로 처리
-}
-
-function makeCard(ev) {
+function makeCard(ev, isPast) {
   var card = document.createElement("div");
-  card.className = "ecard bl-" + (ev.type || "other");
+  card.className = "ecard bl-" + (ev.type || "other") + (isPast ? " past-card" : "");
 
   var dateDiv = document.createElement("div");
   dateDiv.className = "edate";
@@ -356,10 +326,15 @@ function makeCard(ev) {
 
   card.appendChild(dateDiv);
   card.appendChild(bodyDiv);
-  (function(id) {
-    card.onclick = function() { openEdit(id); };
-  })(ev.id);
+  (function(id) { card.onclick = function() { openEdit(id); }; })(ev.id);
   return card;
+}
+
+function makeSectionLabel(text) {
+  var div = document.createElement("div");
+  div.className = "section-label";
+  div.textContent = text;
+  return div;
 }
 
 function renderCal() {
@@ -391,9 +366,7 @@ function renderCal() {
     }
     cell = document.createElement("div");
     cell.className = "cday" + (today.getFullYear() === cy && today.getMonth() === cm && today.getDate() === d ? " today" : "");
-    (function(ds) {
-      cell.onclick = function() { openModal(ds); };
-    })(dateStr);
+    (function(ds) { cell.onclick = function() { openModal(ds); }; })(dateStr);
 
     dn = document.createElement("div");
     dn.className = "dn";
@@ -404,9 +377,7 @@ function renderCal() {
       dot = document.createElement("div");
       dot.className = "edot t-" + (devs[i].type || "other");
       dot.textContent = devs[i].title;
-      (function(id) {
-        dot.onclick = function(e) { e.stopPropagation(); openEdit(id); };
-      })(devs[i].id);
+      (function(id) { dot.onclick = function(e) { e.stopPropagation(); openEdit(id); }; })(devs[i].id);
       cell.appendChild(dot);
     }
     if (devs.length > 2) {
@@ -419,76 +390,57 @@ function renderCal() {
     body.appendChild(cell);
   }
 
-  // ③ 이번 달 일정: 지나간 일정 / 예정 일정 분리
-  var monthEvs = [];
-  for (i = 0; i < allEvents.length; i++) {
-    if (allEvents[i].date.indexOf(prefix) === 0) monthEvs.push(allEvents[i]);
-  }
-
+  // ─── 일정 목록 ───
+  // 전체 이벤트를 지나간 것 / 앞으로 것 분리
   var pastEvs = [];
   var upcomingEvs = [];
-  for (i = 0; i < monthEvs.length; i++) {
-    if (monthEvs[i].date < todayStr) {
-      pastEvs.push(monthEvs[i]);
+  for (i = 0; i < allEvents.length; i++) {
+    if (allEvents[i].date < todayStr) {
+      pastEvs.push(allEvents[i]);
     } else {
-      upcomingEvs.push(monthEvs[i]);
+      upcomingEvs.push(allEvents[i]);
     }
   }
+
+  // 지나간 일정: 최신순 정렬 후 최근 3개, 표시할 땐 오래된 순으로
+  var recentPast = pastEvs.slice(-3); // 이미 date asc 정렬이므로 마지막 3개 = 가장 최근 3개
+
+  // 앞으로 예정: 날짜순 7개
+  var nextUp = upcomingEvs.slice(0, 7);
 
   var list = document.getElementById("evList");
-  var pastList = document.getElementById("pastList");
-  var pastToggleWrap = document.getElementById("pastToggleWrap");
-
   list.innerHTML = "";
-  pastList.innerHTML = "";
 
-  if (monthEvs.length === 0) {
-    list.innerHTML = "<div class='empty'>이번 달 등록된 일정이 없습니다.</div>";
-    pastToggleWrap.style.display = "none";
-    return;
+  // 지나간 일정 3개 (오래된 → 최근 순, 즉 recentPast 그대로)
+  if (recentPast.length > 0) {
+    list.appendChild(makeSectionLabel("지나간 일정"));
+    for (i = 0; i < recentPast.length; i++) {
+      list.appendChild(makeCard(recentPast[i], true));
+    }
   }
 
-  // 예정 일정: 오늘 이후 최대 10개
-  var showUpcoming = upcomingEvs.slice(0, 10);
-  if (showUpcoming.length === 0) {
-    var emptyDiv = document.createElement("div");
-    emptyDiv.className = "empty";
-    emptyDiv.textContent = "예정된 일정이 없습니다.";
-    list.appendChild(emptyDiv);
+  // 구분선
+  list.appendChild(makeSectionLabel("앞으로 예정된 일정"));
+
+  // 예정 일정 7개
+  if (nextUp.length === 0) {
+    var empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "예정된 일정이 없습니다.";
+    list.appendChild(empty);
   } else {
-    for (i = 0; i < showUpcoming.length; i++) {
-      list.appendChild(makeCard(showUpcoming[i]));
+    for (i = 0; i < nextUp.length; i++) {
+      list.appendChild(makeCard(nextUp[i], false));
     }
-    if (upcomingEvs.length > 10) {
+    if (upcomingEvs.length > 7) {
       var moreDiv = document.createElement("div");
-      moreDiv.className = "past-label";
-      moreDiv.textContent = "이후 " + (upcomingEvs.length - 10) + "개 일정은 달력에서 확인하세요.";
+      moreDiv.style.textAlign = "center";
+      moreDiv.style.color = "#94a3b8";
+      moreDiv.style.fontSize = ".8rem";
+      moreDiv.style.padding = "8px 0";
+      moreDiv.textContent = "이후 " + (upcomingEvs.length - 7) + "개 일정은 달력에서 확인하세요.";
       list.appendChild(moreDiv);
     }
-  }
-
-  // 지나간 일정 토글
-  if (pastEvs.length > 0) {
-    pastToggleWrap.style.display = "flex";
-    var label = document.createElement("div");
-    label.className = "past-label";
-    label.textContent = "── 지나간 일정 (" + pastEvs.length + "개) ──";
-    pastList.appendChild(label);
-    // 최근 순으로 (역순)
-    var reversedPast = pastEvs.slice().reverse();
-    for (i = 0; i < reversedPast.length; i++) {
-      pastList.appendChild(makeCard(reversedPast[i]));
-    }
-    // 토글 상태 유지
-    if (pastOpen) {
-      pastList.classList.add("open");
-      document.getElementById("pastToggleBtn").textContent = "▲ 지나간 일정 접기";
-    } else {
-      pastList.classList.remove("open");
-      document.getElementById("pastToggleBtn").textContent = "▼ 지나간 일정 보기";
-    }
-  } else {
-    pastToggleWrap.style.display = "none";
   }
 }
 </script>
