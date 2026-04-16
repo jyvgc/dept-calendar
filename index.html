@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>학과 일정관리</title>
+<link rel="manifest" href="manifest.json"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:sans-serif;background:#f1f5f9;color:#1e293b;min-height:100vh;}
+#auth{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;}
+.acard{background:#fff;border-radius:20px;padding:40px 32px;max-width:380px;width:100%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.1);}
+.acard h1{font-size:1.5rem;color:#1a56db;margin-bottom:8px;}
+.acard p{color:#64748b;font-size:.9rem;margin-bottom:24px;line-height:1.6;}
+#loginBtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px;border:2px solid #e2e8f0;border-radius:12px;background:#fff;font-size:1rem;font-weight:600;cursor:pointer;}
+#loginBtn:hover{border-color:#1a56db;background:#f0f4ff;}
+#loginBtn svg{width:22px;height:22px;}
+#errmsg{margin-top:12px;color:#ef4444;font-size:.85rem;padding:10px;background:#fef2f2;border-radius:8px;display:none;}
+#loadmsg{margin-top:12px;color:#64748b;font-size:.85rem;display:none;}
+#app{display:none;flex-direction:column;min-height:100vh;}
+header{background:#1a56db;color:#fff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+header h1{font-size:1.1rem;}
+#logoutBtn{background:rgba(255,255,255,.2);border:none;color:#fff;padding:6px 14px;border-radius:8px;cursor:pointer;}
+.main{padding:20px;max-width:800px;margin:0 auto;width:100%;}
+.cnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.cnav h2{font-size:1.2rem;font-weight:700;}
+.nbtn{background:#fff;border:1px solid #e2e8f0;border-radius:10px;width:36px;height:36px;font-size:1.2rem;cursor:pointer;}
+.cgrid{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.07);}
+.chead{display:grid;grid-template-columns:repeat(7,1fr);background:#1a56db;}
+.chead span{text-align:center;padding:10px 4px;font-size:.75rem;font-weight:700;color:#fff;}
+.cbody{display:grid;grid-template-columns:repeat(7,1fr);}
+.cday{min-height:68px;border-right:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;padding:5px 3px;cursor:pointer;position:relative;}
+.cday:hover{background:#f0f4ff;}
+.cday:nth-child(7n){border-right:none;}
+.cday.other .dn{color:#cbd5e1;}
+.cday.today .dn{background:#1a56db;color:#fff;border-radius:50%;}
+.dn{font-size:.82rem;font-weight:600;width:24px;height:24px;display:flex;align-items:center;justify-content:center;margin-bottom:2px;}
+.edot{font-size:.68rem;color:#fff;border-radius:3px;padding:1px 4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.t-meeting{background:#7c3aed;}.t-deadline{background:#ef4444;}.t-event{background:#059669;}.t-other{background:#64748b;}
+.bl-meeting{border-left:4px solid #7c3aed;}.bl-deadline{border-left:4px solid #ef4444;}.bl-event{border-left:4px solid #059669;}.bl-other{border-left:4px solid #64748b;}
+.fab{position:fixed;bottom:28px;right:24px;width:56px;height:56px;border-radius:50%;background:#1a56db;color:#fff;border:none;font-size:1.8rem;cursor:pointer;box-shadow:0 4px 16px rgba(26,86,219,.4);z-index:200;}
+.stitle{font-size:1rem;font-weight:700;margin:24px 0 10px;}
+.elist{display:flex;flex-direction:column;gap:10px;margin-bottom:80px;}
+.ecard{background:#fff;border-radius:12px;padding:14px 16px;display:flex;gap:12px;box-shadow:0 1px 6px rgba(0,0,0,.07);cursor:pointer;}
+.edate{font-size:.75rem;color:#64748b;min-width:48px;}
+.ebody h4{font-size:.93rem;font-weight:600;margin-bottom:2px;}
+.ebody p{font-size:.8rem;color:#64748b;}
+.tbadge{font-size:.68rem;border-radius:4px;padding:1px 6px;color:#fff;display:inline-block;margin-bottom:3px;}
+.empty{text-align:center;color:#64748b;padding:28px;}
+.mbg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;align-items:center;justify-content:center;padding:20px;}
+.mbg.open{display:flex;}
+.modal{background:#fff;border-radius:20px;width:100%;max-width:460px;padding:28px 24px;}
+.modal h3{font-size:1.05rem;margin-bottom:18px;color:#1a56db;}
+.fg{margin-bottom:12px;}
+.fg label{display:block;font-size:.8rem;font-weight:600;color:#64748b;margin-bottom:4px;}
+.fg input,.fg select,.fg textarea{width:100%;padding:9px 11px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:.93rem;outline:none;font-family:inherit;}
+.fg textarea{resize:vertical;min-height:65px;}
+.mbtns{display:flex;gap:8px;margin-top:18px;}
+#saveBtn{flex:1;padding:11px;background:#1a56db;color:#fff;border:none;border-radius:10px;font-size:.93rem;font-weight:700;cursor:pointer;}
+#cancelBtn{padding:11px 18px;background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:10px;cursor:pointer;}
+#deleteBtn{padding:11px 14px;background:#fff;border:1.5px solid #ef4444;color:#ef4444;border-radius:10px;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<div id="auth">
+  <div class="acard">
+    <h1>&#128197; 학과 일정관리</h1>
+    <p>학과 교수 전용 일정 공유 시스템<br/>허가된 계정으로만 로그인 가능합니다.</p>
+    <button id="loginBtn">
+      <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.1 0 5.9 1.1 8.1 2.9l6-6C34.5 3.1 29.6 1 24 1 14.8 1 7 6.7 3.7 14.6l7 5.4C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.4 5.7c4.3-4 6.8-9.9 6.8-16.9z"/><path fill="#FBBC05" d="M10.7 28.6A14.9 14.9 0 0 1 9.5 24c0-1.6.3-3.2.8-4.6l-7-5.4A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.6 10.8l8.1-6.2z"/><path fill="#34A853" d="M24 47c5.4 0 10-1.8 13.3-4.8l-7.4-5.7c-1.8 1.2-4.1 1.9-5.9 1.9-6.3 0-11.6-4.2-13.5-9.8l-8.1 6.2C7 41.3 14.8 47 24 47z"/></svg>
+      Google 계정으로 로그인
+    </button>
+    <p id="loadmsg">로그인 처리 중...</p>
+    <p id="errmsg"></p>
+  </div>
+</div>
+
+<div id="app">
+  <header>
+    <h1>&#128197; 학과 일정관리</h1>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span id="uname" style="font-size:.8rem;opacity:.85;"></span>
+      <button id="logoutBtn">로그아웃</button>
+    </div>
+  </header>
+  <div class="main">
+    <div class="cnav">
+      <button class="nbtn" id="prevBtn">&#8249;</button>
+      <h2 id="calTitle"></h2>
+      <button class="nbtn" id="nextBtn">&#8250;</button>
+    </div>
+    <div class="cgrid">
+      <div class="chead">
+        <span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span>
+      </div>
+      <div class="cbody" id="calBody"></div>
+    </div>
+    <div class="stitle">&#128203; 이번 달 일정</div>
+    <div class="elist" id="evList"></div>
+  </div>
+  <button class="fab" id="fabBtn">+</button>
+</div>
+
+<div class="mbg" id="modalBg">
+  <div class="modal">
+    <h3 id="modalTitle">일정 추가</h3>
+    <div class="fg"><label>제목 *</label><input type="text" id="fTitle" placeholder="예: 학과 교수회의"/></div>
+    <div class="fg"><label>날짜 *</label><input type="date" id="fDate"/></div>
+    <div class="fg"><label>시간</label><input type="time" id="fTime"/></div>
+    <div class="fg"><label>유형</label>
+      <select id="fType">
+        <option value="meeting">회의</option>
+        <option value="deadline">마감</option>
+        <option value="event">행사</option>
+        <option value="other">기타</option>
+      </select>
+    </div>
+    <div class="fg"><label>메모</label><textarea id="fMemo" placeholder="장소, 안건 등"></textarea></div>
+    <div class="mbtns">
+      <button id="cancelBtn">취소</button>
+      <button id="deleteBtn" style="display:none">삭제</button>
+      <button id="saveBtn">저장</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script>
+firebase.initializeApp({
+  apiKey: "AIzaSyAOe9eILXYtCH-ksx2Cb_2NCdLRrYvWJOM",
+  authDomain: "dept-calendar-8bbb9.firebaseapp.com",
+  projectId: "dept-calendar-8bbb9",
+  storageBucket: "dept-calendar-8bbb9.firebasestorage.app",
+  messagingSenderId: "644350325852",
+  appId: "1:644350325852:web:c177467128035d4cb56299"
+});
+
+var ALLOWED = ["jykim@gumi.ac.kr", "se1314@gumi.ac.kr"];
+var auth = firebase.auth();
+var db = firebase.firestore();
+var provider = new firebase.auth.GoogleAuthProvider();
+provider.setCustomParameters({ prompt: "select_account" });
+
+var currentUser = null;
+var cy = new Date().getFullYear();
+var cm = new Date().getMonth();
+var allEvents = [];
+var editId = null;
+var TN = { meeting: "회의", deadline: "마감", event: "행사", other: "기타" };
+
+// 로그인
+document.getElementById("loginBtn").onclick = function() {
+  document.getElementById("loginBtn").disabled = true;
+  document.getElementById("loadmsg").style.display = "block";
+  document.getElementById("errmsg").style.display = "none";
+  auth.signInWithPopup(provider)
+    .then(function(r) {
+      if (ALLOWED.indexOf(r.user.email) === -1) {
+        auth.signOut();
+        showErr("허용되지 않은 계정입니다: " + r.user.email);
+      }
+    })
+    .catch(function(err) {
+      if (err.code === "auth/popup-blocked") {
+        showErr("팝업이 차단되었습니다. 브라우저에서 팝업을 허용해주세요.");
+      } else if (err.code === "auth/unauthorized-domain") {
+        showErr("도메인 오류: Firebase 콘솔 > Authentication > 승인된 도메인에 현재 주소를 추가하세요.");
+      } else if (err.code !== "auth/popup-closed-by-user") {
+        showErr("오류: " + err.message);
+      }
+      document.getElementById("loginBtn").disabled = false;
+      document.getElementById("loadmsg").style.display = "none";
+    })
+    .then(function() {
+      document.getElementById("loginBtn").disabled = false;
+      document.getElementById("loadmsg").style.display = "none";
+    });
+};
+
+function showErr(msg) {
+  var el = document.getElementById("errmsg");
+  el.textContent = msg;
+  el.style.display = "block";
+}
+
+document.getElementById("logoutBtn").onclick = function() { auth.signOut(); };
+
+auth.onAuthStateChanged(function(user) {
+  if (user && ALLOWED.indexOf(user.email) !== -1) {
+    currentUser = user;
+    document.getElementById("uname").textContent = user.displayName || user.email;
+    document.getElementById("auth").style.display = "none";
+    document.getElementById("app").style.display = "flex";
+    loadEvents();
+  } else {
+    currentUser = null;
+    document.getElementById("auth").style.display = "flex";
+    document.getElementById("app").style.display = "none";
+  }
+});
+
+document.getElementById("prevBtn").onclick = function() { cm--; if (cm < 0) { cm = 11; cy--; } renderCal(); };
+document.getElementById("nextBtn").onclick = function() { cm++; if (cm > 11) { cm = 0; cy++; } renderCal(); };
+document.getElementById("fabBtn").onclick = function() { openModal(""); };
+document.getElementById("cancelBtn").onclick = closeModal;
+document.getElementById("saveBtn").onclick = saveEvent;
+document.getElementById("deleteBtn").onclick = deleteEvent;
+document.getElementById("modalBg").onclick = function(e) { if (e.target === this) closeModal(); };
+
+function openModal(dateStr) {
+  editId = null;
+  document.getElementById("modalTitle").textContent = "일정 추가";
+  document.getElementById("fTitle").value = "";
+  document.getElementById("fDate").value = dateStr;
+  document.getElementById("fTime").value = "";
+  document.getElementById("fType").value = "meeting";
+  document.getElementById("fMemo").value = "";
+  document.getElementById("deleteBtn").style.display = "none";
+  document.getElementById("modalBg").classList.add("open");
+}
+
+function openEdit(id) {
+  var ev = null;
+  for (var i = 0; i < allEvents.length; i++) {
+    if (allEvents[i].id === id) { ev = allEvents[i]; break; }
+  }
+  if (!ev) return;
+  editId = id;
+  document.getElementById("modalTitle").textContent = "일정 수정";
+  document.getElementById("fTitle").value = ev.title;
+  document.getElementById("fDate").value = ev.date;
+  document.getElementById("fTime").value = ev.time || "";
+  document.getElementById("fType").value = ev.type || "meeting";
+  document.getElementById("fMemo").value = ev.memo || "";
+  document.getElementById("deleteBtn").style.display = (ev.uid === currentUser.uid) ? "block" : "none";
+  document.getElementById("modalBg").classList.add("open");
+}
+
+function closeModal() {
+  document.getElementById("modalBg").classList.remove("open");
+}
+
+function saveEvent() {
+  var title = document.getElementById("fTitle").value.trim();
+  var date = document.getElementById("fDate").value;
+  if (!title || !date) { alert("제목과 날짜를 입력하세요."); return; }
+  var data = {
+    title: title,
+    date: date,
+    time: document.getElementById("fTime").value,
+    type: document.getElementById("fType").value,
+    memo: document.getElementById("fMemo").value.trim(),
+    uid: currentUser.uid,
+    author: currentUser.displayName || currentUser.email,
+    updatedAt: new Date().toISOString()
+  };
+  var p;
+  if (editId) {
+    p = db.collection("events").doc(editId).update(data);
+  } else {
+    data.createdAt = new Date().toISOString();
+    p = db.collection("events").add(data);
+  }
+  p.then(function() { closeModal(); loadEvents(); });
+}
+
+function deleteEvent() {
+  if (!editId || !confirm("일정을 삭제하시겠습니까?")) return;
+  db.collection("events").doc(editId).delete().then(function() { closeModal(); loadEvents(); });
+}
+
+function loadEvents() {
+  db.collection("events").orderBy("date").get().then(function(snap) {
+    allEvents = [];
+    snap.forEach(function(d) {
+      var obj = d.data();
+      obj.id = d.id;
+      allEvents.push(obj);
+    });
+    renderCal();
+  });
+}
+
+function renderCal() {
+  var MN = ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
+  document.getElementById("calTitle").textContent = cy + "년 " + MN[cm];
+  var first = new Date(cy, cm, 1).getDay();
+  var total = new Date(cy, cm + 1, 0).getDate();
+  var today = new Date();
+  var prefix = cy + "-" + (cm + 1 < 10 ? "0" : "") + (cm + 1);
+  var body = document.getElementById("calBody");
+  body.innerHTML = "";
+
+  var i, d, cell, dn, dot, devs, dateStr;
+
+  for (i = 0; i < first; i++) {
+    cell = document.createElement("div");
+    cell.className = "cday other";
+    body.appendChild(cell);
+  }
+
+  for (d = 1; d <= total; d++) {
+    dateStr = prefix + "-" + (d < 10 ? "0" : "") + d;
+    devs = [];
+    for (i = 0; i < allEvents.length; i++) {
+      if (allEvents[i].date === dateStr) devs.push(allEvents[i]);
+    }
+    cell = document.createElement("div");
+    cell.className = "cday" + (today.getFullYear() === cy && today.getMonth() === cm && today.getDate() === d ? " today" : "");
+    (function(ds) {
+      cell.onclick = function() { openModal(ds); };
+    })(dateStr);
+
+    dn = document.createElement("div");
+    dn.className = "dn";
+    dn.textContent = d;
+    cell.appendChild(dn);
+
+    for (i = 0; i < Math.min(devs.length, 2); i++) {
+      dot = document.createElement("div");
+      dot.className = "edot t-" + (devs[i].type || "other");
+      dot.textContent = devs[i].title;
+      (function(id) {
+        dot.onclick = function(e) { e.stopPropagation(); openEdit(id); };
+      })(devs[i].id);
+      cell.appendChild(dot);
+    }
+    if (devs.length > 2) {
+      var more = document.createElement("div");
+      more.style.fontSize = ".62rem";
+      more.style.color = "#64748b";
+      more.textContent = "+" + (devs.length - 2) + "개";
+      cell.appendChild(more);
+    }
+    body.appendChild(cell);
+  }
+
+  var monthEvs = [];
+  for (i = 0; i < allEvents.length; i++) {
+    if (allEvents[i].date.indexOf(prefix) === 0) monthEvs.push(allEvents[i]);
+  }
+
+  var list = document.getElementById("evList");
+  if (monthEvs.length === 0) {
+    list.innerHTML = "<div class='empty'>이번 달 등록된 일정이 없습니다.</div>";
+    return;
+  }
+
+  list.innerHTML = "";
+  for (i = 0; i < monthEvs.length; i++) {
+    var ev = monthEvs[i];
+    var card = document.createElement("div");
+    card.className = "ecard bl-" + (ev.type || "other");
+
+    var dateDiv = document.createElement("div");
+    dateDiv.className = "edate";
+    dateDiv.innerHTML = ev.date.slice(5).replace("-", "/") + "<br/>" + (ev.time || "");
+
+    var bodyDiv = document.createElement("div");
+    bodyDiv.className = "ebody";
+
+    var badge = document.createElement("span");
+    badge.className = "tbadge t-" + (ev.type || "other");
+    badge.textContent = TN[ev.type] || "기타";
+
+    var title = document.createElement("h4");
+    title.textContent = ev.title;
+
+    bodyDiv.appendChild(badge);
+    bodyDiv.appendChild(title);
+
+    if (ev.memo) {
+      var memo = document.createElement("p");
+      memo.textContent = ev.memo;
+      bodyDiv.appendChild(memo);
+    }
+
+    var author = document.createElement("p");
+    author.style.fontSize = ".73rem";
+    author.style.marginTop = "2px";
+    author.textContent = "등록: " + (ev.author || "");
+    bodyDiv.appendChild(author);
+
+    card.appendChild(dateDiv);
+    card.appendChild(bodyDiv);
+    (function(id) {
+      card.onclick = function() { openEdit(id); };
+    })(ev.id);
+    list.appendChild(card);
+  }
+}
+</script>
+</body>
+</html>
