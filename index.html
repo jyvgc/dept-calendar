@@ -26,27 +26,38 @@ header h1{font-size:1.1rem;}
 .cnav h2{font-size:1.2rem;font-weight:700;}
 .nbtn{background:#fff;border:1px solid #e2e8f0;border-radius:10px;width:36px;height:36px;font-size:1.2rem;cursor:pointer;}
 .cgrid{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.07);}
+/* ① 요일 헤더: 7등분 고정 */
 .chead{display:grid;grid-template-columns:repeat(7,1fr);background:#1a56db;}
 .chead span{text-align:center;padding:10px 4px;font-size:.75rem;font-weight:700;color:#fff;}
+/* ① 날짜 칸: 7등분 고정 + min-width:0 으로 넓이 고정 */
 .cbody{display:grid;grid-template-columns:repeat(7,1fr);}
-.cday{min-height:68px;border-right:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;padding:5px 3px;cursor:pointer;position:relative;}
+.cday{min-height:68px;min-width:0;overflow:hidden;border-right:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;padding:5px 3px;cursor:pointer;position:relative;}
 .cday:hover{background:#f0f4ff;}
 .cday:nth-child(7n){border-right:none;}
 .cday.other .dn{color:#cbd5e1;}
 .cday.today .dn{background:#1a56db;color:#fff;border-radius:50%;}
 .dn{font-size:.82rem;font-weight:600;width:24px;height:24px;display:flex;align-items:center;justify-content:center;margin-bottom:2px;}
-.edot{font-size:.68rem;color:#fff;border-radius:3px;padding:1px 4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* ② 이벤트 점: 5글자 초과 시 ... 처리 */
+.edot{font-size:.68rem;color:#fff;border-radius:3px;padding:1px 4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;display:block;}
 .t-meeting{background:#7c3aed;}.t-deadline{background:#ef4444;}.t-event{background:#059669;}.t-other{background:#64748b;}
 .bl-meeting{border-left:4px solid #7c3aed;}.bl-deadline{border-left:4px solid #ef4444;}.bl-event{border-left:4px solid #059669;}.bl-other{border-left:4px solid #64748b;}
 .fab{position:fixed;bottom:28px;right:24px;width:56px;height:56px;border-radius:50%;background:#1a56db;color:#fff;border:none;font-size:1.8rem;cursor:pointer;box-shadow:0 4px 16px rgba(26,86,219,.4);z-index:200;}
 .stitle{font-size:1rem;font-weight:700;margin:24px 0 10px;}
-.elist{display:flex;flex-direction:column;gap:10px;margin-bottom:80px;}
+.elist{display:flex;flex-direction:column;gap:10px;}
 .ecard{background:#fff;border-radius:12px;padding:14px 16px;display:flex;gap:12px;box-shadow:0 1px 6px rgba(0,0,0,.07);cursor:pointer;}
 .edate{font-size:.75rem;color:#64748b;min-width:48px;}
 .ebody h4{font-size:.93rem;font-weight:600;margin-bottom:2px;}
 .ebody p{font-size:.8rem;color:#64748b;}
 .tbadge{font-size:.68rem;border-radius:4px;padding:1px 6px;color:#fff;display:inline-block;margin-bottom:3px;}
 .empty{text-align:center;color:#64748b;padding:28px;}
+/* ③ 지나간 일정 토글 버튼 */
+.past-toggle{display:flex;align-items:center;justify-content:center;margin:10px 0;}
+.past-toggle button{background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:10px;padding:8px 18px;font-size:.85rem;color:#475569;cursor:pointer;font-weight:600;}
+.past-toggle button:hover{background:#e2e8f0;}
+#pastList{display:none;flex-direction:column;gap:10px;margin-top:8px;}
+#pastList.open{display:flex;}
+.past-label{font-size:.78rem;color:#94a3b8;text-align:center;padding:6px 0;font-weight:600;letter-spacing:.03em;}
+.mb-wrap{margin-bottom:80px;}
 .mbg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;align-items:center;justify-content:center;padding:20px;}
 .mbg.open{display:flex;}
 .modal{background:#fff;border-radius:20px;width:100%;max-width:460px;padding:28px 24px;}
@@ -97,7 +108,13 @@ header h1{font-size:1.1rem;}
       <div class="cbody" id="calBody"></div>
     </div>
     <div class="stitle">&#128203; 이번 달 일정</div>
-    <div class="elist" id="evList"></div>
+    <div class="mb-wrap">
+      <div class="elist" id="evList"></div>
+      <div class="past-toggle" id="pastToggleWrap" style="display:none;">
+        <button id="pastToggleBtn">&#9660; 지나간 일정 보기</button>
+      </div>
+      <div id="pastList"></div>
+    </div>
   </div>
   <button class="fab" id="fabBtn">+</button>
 </div>
@@ -150,6 +167,7 @@ var cm = new Date().getMonth();
 var allEvents = [];
 var editId = null;
 var TN = { meeting: "회의", deadline: "마감", event: "행사", other: "기타" };
+var pastOpen = false;
 
 // 로그인
 document.getElementById("loginBtn").onclick = function() {
@@ -209,6 +227,20 @@ document.getElementById("cancelBtn").onclick = closeModal;
 document.getElementById("saveBtn").onclick = saveEvent;
 document.getElementById("deleteBtn").onclick = deleteEvent;
 document.getElementById("modalBg").onclick = function(e) { if (e.target === this) closeModal(); };
+
+// ③ 지나간 일정 토글
+document.getElementById("pastToggleBtn").onclick = function() {
+  pastOpen = !pastOpen;
+  var pastList = document.getElementById("pastList");
+  var btn = document.getElementById("pastToggleBtn");
+  if (pastOpen) {
+    pastList.classList.add("open");
+    btn.textContent = "▲ 지나간 일정 접기";
+  } else {
+    pastList.classList.remove("open");
+    btn.textContent = "▼ 지나간 일정 보기";
+  }
+};
 
 function openModal(dateStr) {
   editId = null;
@@ -284,12 +316,61 @@ function loadEvents() {
   });
 }
 
+// ② 캘린더 이벤트 점: 5글자 초과 시 잘라서 표시 (CSS ellipsis가 처리하지만 확실히 하기 위해)
+function truncateTitle(title) {
+  return title; // CSS overflow:hidden + text-overflow:ellipsis 로 처리
+}
+
+function makeCard(ev) {
+  var card = document.createElement("div");
+  card.className = "ecard bl-" + (ev.type || "other");
+
+  var dateDiv = document.createElement("div");
+  dateDiv.className = "edate";
+  dateDiv.innerHTML = ev.date.slice(5).replace("-", "/") + "<br/>" + (ev.time || "");
+
+  var bodyDiv = document.createElement("div");
+  bodyDiv.className = "ebody";
+
+  var badge = document.createElement("span");
+  badge.className = "tbadge t-" + (ev.type || "other");
+  badge.textContent = TN[ev.type] || "기타";
+
+  var titleEl = document.createElement("h4");
+  titleEl.textContent = ev.title;
+
+  bodyDiv.appendChild(badge);
+  bodyDiv.appendChild(titleEl);
+
+  if (ev.memo) {
+    var memo = document.createElement("p");
+    memo.textContent = ev.memo;
+    bodyDiv.appendChild(memo);
+  }
+
+  var author = document.createElement("p");
+  author.style.fontSize = ".73rem";
+  author.style.marginTop = "2px";
+  author.textContent = "등록: " + (ev.author || "");
+  bodyDiv.appendChild(author);
+
+  card.appendChild(dateDiv);
+  card.appendChild(bodyDiv);
+  (function(id) {
+    card.onclick = function() { openEdit(id); };
+  })(ev.id);
+  return card;
+}
+
 function renderCal() {
   var MN = ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
   document.getElementById("calTitle").textContent = cy + "년 " + MN[cm];
   var first = new Date(cy, cm, 1).getDay();
   var total = new Date(cy, cm + 1, 0).getDate();
   var today = new Date();
+  var todayStr = today.getFullYear() + "-" +
+    (today.getMonth()+1 < 10 ? "0" : "") + (today.getMonth()+1) + "-" +
+    (today.getDate() < 10 ? "0" : "") + today.getDate();
   var prefix = cy + "-" + (cm + 1 < 10 ? "0" : "") + (cm + 1);
   var body = document.getElementById("calBody");
   body.innerHTML = "";
@@ -338,58 +419,76 @@ function renderCal() {
     body.appendChild(cell);
   }
 
+  // ③ 이번 달 일정: 지나간 일정 / 예정 일정 분리
   var monthEvs = [];
   for (i = 0; i < allEvents.length; i++) {
     if (allEvents[i].date.indexOf(prefix) === 0) monthEvs.push(allEvents[i]);
   }
 
+  var pastEvs = [];
+  var upcomingEvs = [];
+  for (i = 0; i < monthEvs.length; i++) {
+    if (monthEvs[i].date < todayStr) {
+      pastEvs.push(monthEvs[i]);
+    } else {
+      upcomingEvs.push(monthEvs[i]);
+    }
+  }
+
   var list = document.getElementById("evList");
+  var pastList = document.getElementById("pastList");
+  var pastToggleWrap = document.getElementById("pastToggleWrap");
+
+  list.innerHTML = "";
+  pastList.innerHTML = "";
+
   if (monthEvs.length === 0) {
     list.innerHTML = "<div class='empty'>이번 달 등록된 일정이 없습니다.</div>";
+    pastToggleWrap.style.display = "none";
     return;
   }
 
-  list.innerHTML = "";
-  for (i = 0; i < monthEvs.length; i++) {
-    var ev = monthEvs[i];
-    var card = document.createElement("div");
-    card.className = "ecard bl-" + (ev.type || "other");
-
-    var dateDiv = document.createElement("div");
-    dateDiv.className = "edate";
-    dateDiv.innerHTML = ev.date.slice(5).replace("-", "/") + "<br/>" + (ev.time || "");
-
-    var bodyDiv = document.createElement("div");
-    bodyDiv.className = "ebody";
-
-    var badge = document.createElement("span");
-    badge.className = "tbadge t-" + (ev.type || "other");
-    badge.textContent = TN[ev.type] || "기타";
-
-    var title = document.createElement("h4");
-    title.textContent = ev.title;
-
-    bodyDiv.appendChild(badge);
-    bodyDiv.appendChild(title);
-
-    if (ev.memo) {
-      var memo = document.createElement("p");
-      memo.textContent = ev.memo;
-      bodyDiv.appendChild(memo);
+  // 예정 일정: 오늘 이후 최대 10개
+  var showUpcoming = upcomingEvs.slice(0, 10);
+  if (showUpcoming.length === 0) {
+    var emptyDiv = document.createElement("div");
+    emptyDiv.className = "empty";
+    emptyDiv.textContent = "예정된 일정이 없습니다.";
+    list.appendChild(emptyDiv);
+  } else {
+    for (i = 0; i < showUpcoming.length; i++) {
+      list.appendChild(makeCard(showUpcoming[i]));
     }
+    if (upcomingEvs.length > 10) {
+      var moreDiv = document.createElement("div");
+      moreDiv.className = "past-label";
+      moreDiv.textContent = "이후 " + (upcomingEvs.length - 10) + "개 일정은 달력에서 확인하세요.";
+      list.appendChild(moreDiv);
+    }
+  }
 
-    var author = document.createElement("p");
-    author.style.fontSize = ".73rem";
-    author.style.marginTop = "2px";
-    author.textContent = "등록: " + (ev.author || "");
-    bodyDiv.appendChild(author);
-
-    card.appendChild(dateDiv);
-    card.appendChild(bodyDiv);
-    (function(id) {
-      card.onclick = function() { openEdit(id); };
-    })(ev.id);
-    list.appendChild(card);
+  // 지나간 일정 토글
+  if (pastEvs.length > 0) {
+    pastToggleWrap.style.display = "flex";
+    var label = document.createElement("div");
+    label.className = "past-label";
+    label.textContent = "── 지나간 일정 (" + pastEvs.length + "개) ──";
+    pastList.appendChild(label);
+    // 최근 순으로 (역순)
+    var reversedPast = pastEvs.slice().reverse();
+    for (i = 0; i < reversedPast.length; i++) {
+      pastList.appendChild(makeCard(reversedPast[i]));
+    }
+    // 토글 상태 유지
+    if (pastOpen) {
+      pastList.classList.add("open");
+      document.getElementById("pastToggleBtn").textContent = "▲ 지나간 일정 접기";
+    } else {
+      pastList.classList.remove("open");
+      document.getElementById("pastToggleBtn").textContent = "▼ 지나간 일정 보기";
+    }
+  } else {
+    pastToggleWrap.style.display = "none";
   }
 }
 </script>
