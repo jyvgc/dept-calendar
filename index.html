@@ -339,7 +339,10 @@ function showErr(msg) {
   el.style.display = "block";
 }
 
-document.getElementById("refreshBtn").onclick = function() { startRealtimeListener(); };
+document.getElementById("refreshBtn").onclick = function() {
+  isFirstLoad = true;
+  loadHolidays(cy, function(){ loadHolidays(cy+1, function(){ startRealtimeListener(); }); });
+};
 document.getElementById("logoutBtn").onclick = function() {
   if (unsubscribe) { unsubscribe(); unsubscribe = null; }
   auth.signOut();
