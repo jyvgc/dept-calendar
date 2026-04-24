@@ -148,7 +148,7 @@ header h1{font-size:1rem;}
     <div class="modal-handle"></div>
     <h3 id="modalTitle">일정 추가</h3>
     <div class="fg"><label>제목 *</label><input type="text" id="fTitle" placeholder="예: 학과 교수회의"/></div>
-    <div class="fg"><label>날짜 *</label><input type="date" id="fDate"/></div>
+    <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;"><div class="fg" style="margin-bottom:0;"><label>시작 날짜 *</label><input type="date" id="fDate"/></div><div style="text-align:center;color:#94a3b8;font-size:.85rem;padding-top:22px;">~</div><div class="fg" style="margin-bottom:0;"><label>종료 날짜</label><input type="date" id="fDateEnd"/></div></div><div style="margin-bottom:10px;"></div>
     <div class="fg"><label>유형</label>
       <select id="fType">
         <option value="meeting">📋 회의</option>
@@ -377,6 +377,7 @@ function openModal(dateStr) {
   document.getElementById("modalTitle").textContent = "일정 추가";
   document.getElementById("fTitle").value = "";
   document.getElementById("fDate").value = dateStr;
+  document.getElementById("fDateEnd").value = "";
   document.getElementById("fType").value = "meeting";
   setTimePicker("","fHourS","fMinS");
   setTimePicker("","fHourE","fMinE");
@@ -393,6 +394,7 @@ function openEdit(id) {
   document.getElementById("modalTitle").textContent = "일정 수정";
   document.getElementById("fTitle").value = ev.title;
   document.getElementById("fDate").value = ev.date;
+  document.getElementById("fDateEnd").value = ev.dateEnd||"";
   document.getElementById("fType").value = ev.type||"meeting";
   setTimePicker(ev.time||"","fHourS","fMinS");
   setTimePicker(ev.timeEnd||"","fHourE","fMinE");
@@ -409,6 +411,7 @@ function saveEvent() {
   if(!title||!date){ alert("제목과 날짜를 입력하세요."); return; }
   var data = {
     title:title, date:date,
+    dateEnd: document.getElementById("fDateEnd").value||date,
     time: getTimePicker("fHourS","fMinS"),
     timeEnd: getTimePicker("fHourE","fMinE"),
     type: document.getElementById("fType").value,
@@ -440,7 +443,8 @@ function toICSDate(dateStr, timeStr) {
 function downloadICS(ev) {
   var uid = ev.id + "@dept-calendar";
   var start = toICSDate(ev.date, ev.time);
-  var end = ev.timeEnd ? toICSDate(ev.date, ev.timeEnd) : (ev.time ? toICSDate(ev.date, ev.timeEnd||ev.time) : ev.date.replace(/-/g,""));
+  var endDate = ev.dateEnd && ev.dateEnd !== ev.date ? ev.dateEnd : ev.date;
+  var end = ev.timeEnd ? toICSDate(ev.date, ev.timeEnd) : (ev.time ? toICSDate(ev.date, ev.time) : endDate.replace(/-/g,""));
   var isAllDay = !ev.time;
   var dtStart = isAllDay ? "DTSTART;VALUE=DATE:" + start : "DTSTART:" + start;
   var dtEnd = isAllDay ? "DTEND;VALUE=DATE:" + end : "DTEND:" + (ev.timeEnd ? toICSDate(ev.date, ev.timeEnd) : start);
@@ -484,7 +488,8 @@ function makeCard(ev, isPast) {
   var dateDiv = document.createElement("div");
   dateDiv.className = "edate";
   var tStr = ev.time ? ev.time + (ev.timeEnd ? "~" + ev.timeEnd : "") : "";
-  dateDiv.innerHTML = ev.date.slice(5).replace("-","/") + "<br/>" + tStr;
+  var dateLabel = ev.dateEnd && ev.dateEnd !== ev.date ? ev.date.slice(5).replace("-","/")+"~"+ev.dateEnd.slice(5).replace("-","/") : ev.date.slice(5).replace("-","/");
+  dateDiv.innerHTML = dateLabel + "<br/>" + tStr;
 
   var bodyDiv = document.createElement("div");
   bodyDiv.className = "ebody";
@@ -547,7 +552,7 @@ function renderCal() {
 
   for(d=1;d<=total;d++){
     dateStr=prefix+"-"+(d<10?"0":"")+d;
-    devs=allEvents.filter(function(e){return e.date===dateStr;});
+    devs=allEvents.filter(function(e){ var end=e.dateEnd||e.date; return e.date<=dateStr && end>=dateStr; });
     cell=document.createElement("div");
     cell.className="cday"+(today.getFullYear()===cy&&today.getMonth()===cm&&today.getDate()===d?" today":"");
     (function(ds){ cell.onclick=function(){openModal(ds);}; })(dateStr);
