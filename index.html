@@ -39,8 +39,8 @@ header h1{font-size:1rem;}
 .cday.today .dn{background:#1a56db;color:#fff;border-radius:50%;}
 .dn{font-size:.78rem;font-weight:600;width:22px;height:22px;display:flex;align-items:center;justify-content:center;margin-bottom:1px;}
 .edot{font-size:.62rem;color:#fff;border-radius:3px;padding:1px 3px;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;display:block;}
-.t-meeting{background:#7c3aed;}.t-deadline{background:#ef4444;}.t-event{background:#059669;}.t-holiday{background:#f97316;}.t-other{background:#64748b;}
-.bl-meeting{border-left:4px solid #7c3aed;}.bl-deadline{border-left:4px solid #ef4444;}.bl-event{border-left:4px solid #059669;}.bl-holiday{border-left:4px solid #f97316;}.bl-other{border-left:4px solid #64748b;}
+.t-meeting{background:#7c3aed;}.t-deadline{background:#ef4444;}.t-event{background:#059669;}.t-dept-event{background:#0ea5e9;}.t-school-event{background:#8b5cf6;}.t-admission{background:#f43f5e;}.t-admission-pr{background:#ec4899;}.t-holiday{background:#f97316;}.t-other{background:#64748b;}
+.bl-meeting{border-left:4px solid #7c3aed;}.bl-deadline{border-left:4px solid #ef4444;}.bl-event{border-left:4px solid #059669;}.bl-dept-event{border-left:4px solid #0ea5e9;}.bl-school-event{border-left:4px solid #8b5cf6;}.bl-admission{border-left:4px solid #f43f5e;}.bl-admission-pr{border-left:4px solid #ec4899;}.bl-holiday{border-left:4px solid #f97316;}.bl-other{border-left:4px solid #64748b;}
 .fab{position:fixed;bottom:24px;right:18px;width:52px;height:52px;border-radius:50%;background:#1a56db;color:#fff;border:none;font-size:1.7rem;cursor:pointer;box-shadow:0 4px 16px rgba(26,86,219,.4);z-index:200;}
 .stitle{font-size:.95rem;font-weight:700;margin:18px 0 8px;}
 .elist{display:flex;flex-direction:column;gap:8px;margin-bottom:80px;}
@@ -177,7 +177,10 @@ header h1{font-size:1rem;}
       <select id="fType">
         <option value="meeting">📋 회의</option>
         <option value="deadline">⏰ 마감</option>
-        <option value="event">🎉 행사</option>
+        <option value="dept-event">🏫 학과행사</option>
+        <option value="school-event">🏛️ 학교행사</option>
+        <option value="admission">📝 입시일정</option>
+        <option value="admission-pr">📣 입시홍보</option>
         <option value="holiday">🎌 공휴일</option>
         <option value="other">📌 기타</option>
       </select>
@@ -256,7 +259,7 @@ var editId = null;
 var pastOpen = false;
 var unsubscribe = null; // Firestore 실시간 리스너
 var isFirstLoad = true; // 첫 로드 시 알림 방지
-var TN = { meeting: "회의", deadline: "마감", event: "행사", holiday: "공휴일", other: "기타" };
+var TN = { meeting: "회의", deadline: "마감", "dept-event": "학과행사", "school-event": "학교행사", admission: "입시일정", "admission-pr": "입시홍보", holiday: "공휴일", other: "기타" };
 var EMOJI = { meeting: "📋", deadline: "⏰", event: "🎉", holiday: "🎌", other: "📌" };
 
 // 시간 선택 옵션 생성
@@ -714,7 +717,7 @@ function renderCal() {
 
 // ─── 상세보기 ───
 var viewCurrentId = null;
-var TN_VIEW = { meeting: "📋 회의", deadline: "⏰ 마감", event: "🎉 행사", holiday: "🎌 공휴일", other: "📌 기타" };
+var TN_VIEW = { meeting: "📋 회의", deadline: "⏰ 마감", "dept-event": "🏫 학과행사", "school-event": "🏛️ 학교행사", admission: "📝 입시일정", "admission-pr": "📣 입시홍보", holiday: "🎌 공휴일", other: "📌 기타" };
 
 function openView(id) {
   var ev = null;
