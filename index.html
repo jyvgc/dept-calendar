@@ -199,7 +199,7 @@ firebase.initializeApp({
   appId: "1:644350325852:web:c177467128035d4cb56299"
 });
 
-var ALLOWED = ["jykim@gumi.ac.kr", "se1314@gumi.ac.kr", "cmkim@gumi.ac.kr", "chr7470@gumi.ac.kr", "motionstudy@gumi.ac.kr", "90jangjin@gumi.ac.kr"];
+var ALLOWED = ["jykim@gumi.ac.kr", "se1314@gumi.ac.kr"];
 var auth = firebase.auth();
 var db = firebase.firestore();
 var provider = new firebase.auth.GoogleAuthProvider();
@@ -566,7 +566,7 @@ function renderCal() {
   // 일정 목록
   var pastEvs=[], upcomingEvs=[];
   allEvents.forEach(function(e){ if(e.date<todayStr) pastEvs.push(e); else upcomingEvs.push(e); });
-  var recentPast=pastEvs.slice(-3), nextUp=upcomingEvs.slice(0,7);
+  var recentPast=pastEvs.slice(-3), nextUp=upcomingEvs.slice(0,10);
 
   var list=document.getElementById("evList");
   list.innerHTML="";
