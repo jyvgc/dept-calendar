@@ -606,11 +606,30 @@ function renderCal() {
     var empty=document.createElement("div"); empty.className="empty"; empty.textContent="예정된 일정이 없습니다."; list.appendChild(empty);
   } else {
     nextUp.forEach(function(e){ list.appendChild(makeCard(e,false)); });
-    if(upcomingEvs.length>7){
-      var moreDiv=document.createElement("div");
-      moreDiv.style.cssText="text-align:center;color:#94a3b8;font-size:.78rem;padding:8px 0;";
-      moreDiv.textContent="이후 "+(upcomingEvs.length-7)+"개 일정은 달력에서 확인하세요.";
-      list.appendChild(moreDiv);
+    var restUp=upcomingEvs.slice(10);
+    if(restUp.length>0){
+      var moreToggleRow=document.createElement("div");
+      moreToggleRow.className="past-toggle-row";
+      moreToggleRow.innerHTML='<div class="pt-line"></div><span>더보기 '+restUp.length+'개</span><span class="pt-arrow">▼</span><div class="pt-line"></div>';
+
+      var moreListEl=document.createElement("div");
+      moreListEl.style.display="none";
+      moreListEl.style.flexDirection="column";
+      moreListEl.style.gap="8px";
+      moreListEl.style.marginTop="4px";
+      restUp.forEach(function(e){ moreListEl.appendChild(makeCard(e,false)); });
+
+      var moreOpen=false;
+      moreToggleRow.onclick=function(){
+        moreOpen=!moreOpen;
+        var arrow=moreToggleRow.querySelector(".pt-arrow");
+        var label=moreToggleRow.querySelector("span");
+        moreListEl.style.display=moreOpen?"flex":"none";
+        arrow.textContent=moreOpen?"▲":"▼";
+        label.textContent=moreOpen?"접기":"더보기 "+restUp.length+"개";
+      };
+      list.appendChild(moreToggleRow);
+      list.appendChild(moreListEl);
     }
   }
 }
