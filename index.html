@@ -223,6 +223,25 @@ firebase.initializeApp({
   appId: "1:644350325852:web:c177467128035d4cb56299"
 });
 
+
+// ─── 공휴일 ───
+var holidays = {}; // { "2026-01-01": "새해" }
+var loadedHolidayYears = {};
+
+function loadHolidays(year, callback) {
+  if (loadedHolidayYears[year]) { if(callback) callback(); return; }
+  fetch("https://date.nager.at/api/v3/PublicHolidays/" + year + "/KR")
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      data.forEach(function(h){
+        holidays[h.date] = h.localName || h.name;
+      });
+      loadedHolidayYears[year] = true;
+      if(callback) callback();
+    })
+    .catch(function(){ if(callback) callback(); });
+}
+
 var ALLOWED = ["jykim@gumi.ac.kr", "se1314@gumi.ac.kr", "motionstudy@gumi.ac.kr", "chr7470@gumi.ac.kr", "cmkim@gumi.ac.kr", "90jangjin@gumi.ac.kr"];
 var auth = firebase.auth();
 var db = firebase.firestore();
@@ -333,7 +352,8 @@ auth.onAuthStateChanged(function(user) {
     document.getElementById("auth").style.display = "none";
     document.getElementById("app").style.display = "flex";
     initNotification();
-    startRealtimeListener();
+    var curYear = new Date().getFullYear();
+    loadHolidays(curYear, function(){ loadHolidays(curYear+1, function(){ startRealtimeListener(); }); });
   } else {
     currentUser = null;
     if (unsubscribe) { unsubscribe(); unsubscribe = null; }
@@ -342,8 +362,8 @@ auth.onAuthStateChanged(function(user) {
   }
 });
 
-document.getElementById("prevBtn").onclick = function() { cm--; if(cm<0){cm=11;cy--;} renderCal(); };
-document.getElementById("nextBtn").onclick = function() { cm++; if(cm>11){cm=0;cy++;} renderCal(); };
+document.getElementById("prevBtn").onclick = function() { cm--; if(cm<0){cm=11;cy--;} loadHolidays(cy, function(){ renderCal(); }); };
+document.getElementById("nextBtn").onclick = function() { cm++; if(cm>11){cm=0;cy++;} loadHolidays(cy, function(){ renderCal(); }); };
 document.getElementById("fabBtn").onclick = function() { openModal(""); };
 document.getElementById("cancelBtn").onclick = closeModal;
 document.getElementById("saveBtn").onclick = saveEvent;
@@ -578,10 +598,21 @@ function renderCal() {
   for(d=1;d<=total;d++){
     dateStr=prefix+"-"+(d<10?"0":"")+d;
     devs=allEvents.filter(function(e){ var end=e.dateEnd||e.date; return e.date<=dateStr && end>=dateStr; });
+    var dow=(new Date(cy,cm,d)).getDay();
     cell=document.createElement("div");
     cell.className="cday"+(today.getFullYear()===cy&&today.getMonth()===cm&&today.getDate()===d?" today":"");
+    if(dow===0||holidays[dateStr]) cell.style.color="#ef4444";
+    else if(dow===6) cell.style.color="#1a56db";
     (function(ds){ cell.onclick=function(){openModal(ds);}; })(dateStr);
     dn=document.createElement("div"); dn.className="dn"; dn.textContent=d; cell.appendChild(dn);
+    // 공휴일 표시
+    if(holidays[dateStr]){
+      var hdot=document.createElement("div");
+      hdot.className="edot t-holiday";
+      hdot.textContent=holidays[dateStr];
+      hdot.style.cursor="default";
+      cell.appendChild(hdot);
+    }
     for(i=0;i<Math.min(devs.length,2);i++){
       dot=document.createElement("div");
       dot.className="edot t-"+(devs[i].type||"other");
