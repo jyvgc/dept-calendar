@@ -143,6 +143,30 @@ header h1{font-size:1rem;}
   <button class="fab" id="fabBtn">+</button>
 </div>
 
+
+<div class="mbg" id="viewBg">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3 id="viewTitle" style="color:#1e293b;"></h3>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+      <div style="display:flex;gap:10px;align-items:center;">
+        <span id="viewBadge" class="tbadge"></span>
+        <span id="viewDate" style="font-size:.85rem;color:#64748b;"></span>
+      </div>
+      <div id="viewTimeRow" style="font-size:.85rem;color:#475569;display:none;">🕐 <span id="viewTime"></span></div>
+      <div id="viewMemoRow" style="font-size:.85rem;color:#475569;display:none;white-space:pre-wrap;background:#f8fafc;border-radius:10px;padding:10px 12px;">
+        <span id="viewMemo"></span>
+      </div>
+      <div style="font-size:.75rem;color:#94a3b8;" id="viewAuthor"></div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button id="viewCloseBtn" style="flex:1;padding:12px;background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:10px;cursor:pointer;font-size:.9rem;">닫기</button>
+      <button id="viewEditBtn" style="flex:1;padding:12px;background:#1a56db;color:#fff;border:none;border-radius:10px;font-size:.9rem;font-weight:700;cursor:pointer;">✏️ 수정</button>
+      <button id="viewCalBtn" style="padding:12px 14px;background:#fff;border:1.5px solid #e2e8f0;border-radius:10px;cursor:pointer;font-size:.88rem;">📅</button>
+    </div>
+  </div>
+</div>
+
 <div class="mbg" id="modalBg">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -525,7 +549,7 @@ function makeCard(ev, isPast) {
   card.appendChild(dateDiv);
   card.appendChild(bodyDiv);
   card.appendChild(calBtn);
-  (function(id){ card.onclick = function(){ openEdit(id); }; })(ev.id);
+  (function(id){ card.onclick = function(){ openView(id); }; })(ev.id);
   return card;
 }
 
@@ -606,33 +630,76 @@ function renderCal() {
     var empty=document.createElement("div"); empty.className="empty"; empty.textContent="예정된 일정이 없습니다."; list.appendChild(empty);
   } else {
     nextUp.forEach(function(e){ list.appendChild(makeCard(e,false)); });
-    var restUp=upcomingEvs.slice(10);
-    if(restUp.length>0){
-      var moreToggleRow=document.createElement("div");
-      moreToggleRow.className="past-toggle-row";
-      moreToggleRow.innerHTML='<div class="pt-line"></div><span>더보기 '+restUp.length+'개</span><span class="pt-arrow">▼</span><div class="pt-line"></div>';
-
-      var moreListEl=document.createElement("div");
-      moreListEl.style.display="none";
-      moreListEl.style.flexDirection="column";
-      moreListEl.style.gap="8px";
-      moreListEl.style.marginTop="4px";
-      restUp.forEach(function(e){ moreListEl.appendChild(makeCard(e,false)); });
-
-      var moreOpen=false;
-      moreToggleRow.onclick=function(){
-        moreOpen=!moreOpen;
-        var arrow=moreToggleRow.querySelector(".pt-arrow");
-        var label=moreToggleRow.querySelector("span");
-        moreListEl.style.display=moreOpen?"flex":"none";
-        arrow.textContent=moreOpen?"▲":"▼";
-        label.textContent=moreOpen?"접기":"더보기 "+restUp.length+"개";
-      };
-      list.appendChild(moreToggleRow);
-      list.appendChild(moreListEl);
-    }
+    // 더보기: 10개씩 순차 표시
+    (function(){
+      var PAGE=10, shown=10;
+      function appendMoreBtn(){
+        var remain=upcomingEvs.length-shown;
+        if(remain<=0) return;
+        var btn=document.createElement("div");
+        btn.className="past-toggle-row";
+        btn.innerHTML='<div class="pt-line"></div><span>더보기 '+remain+'개</span><span class="pt-arrow">▼</span><div class="pt-line"></div>';
+        btn.onclick=function(){
+          list.removeChild(btn);
+          var next=upcomingEvs.slice(shown, shown+PAGE);
+          next.forEach(function(e){ list.appendChild(makeCard(e,false)); });
+          shown+=next.length;
+          appendMoreBtn();
+        };
+        list.appendChild(btn);
+      }
+      appendMoreBtn();
+    })();
   }
 }
+
+// ─── 상세보기 ───
+var viewCurrentId = null;
+var TN_VIEW = { meeting: "📋 회의", deadline: "⏰ 마감", event: "🎉 행사", holiday: "🎌 공휴일", other: "📌 기타" };
+
+function openView(id) {
+  var ev = null;
+  for (var i=0;i<allEvents.length;i++) { if(allEvents[i].id===id){ev=allEvents[i];break;} }
+  if(!ev) return;
+  viewCurrentId = id;
+
+  document.getElementById("viewTitle").textContent = ev.title;
+  var badge = document.getElementById("viewBadge");
+  badge.textContent = (TN[ev.type]||"기타");
+  badge.className = "tbadge t-" + (ev.type||"other");
+
+  var dateLabel = ev.dateEnd && ev.dateEnd !== ev.date
+    ? ev.date.slice(5).replace("-","/") + " ~ " + ev.dateEnd.slice(5).replace("-","/")
+    : ev.date.slice(5).replace("-","/");
+  document.getElementById("viewDate").textContent = "📅 " + dateLabel;
+
+  var timeEl = document.getElementById("viewTimeRow");
+  if(ev.time){
+    document.getElementById("viewTime").textContent = ev.time + (ev.timeEnd ? " ~ " + ev.timeEnd : "");
+    timeEl.style.display = "block";
+  } else { timeEl.style.display = "none"; }
+
+  var memoEl = document.getElementById("viewMemoRow");
+  if(ev.memo){
+    document.getElementById("viewMemo").textContent = ev.memo;
+    memoEl.style.display = "block";
+  } else { memoEl.style.display = "none"; }
+
+  document.getElementById("viewAuthor").textContent = "등록: " + (ev.author||"");
+  document.getElementById("viewBg").classList.add("open");
+}
+
+document.getElementById("viewCloseBtn").onclick = function(){ document.getElementById("viewBg").classList.remove("open"); };
+document.getElementById("viewBg").onclick = function(e){ if(e.target===this) document.getElementById("viewBg").classList.remove("open"); };
+document.getElementById("viewEditBtn").onclick = function(){
+  document.getElementById("viewBg").classList.remove("open");
+  openEdit(viewCurrentId);
+};
+document.getElementById("viewCalBtn").onclick = function(){
+  for(var i=0;i<allEvents.length;i++){
+    if(allEvents[i].id===viewCurrentId){ downloadICS(allEvents[i]); break; }
+  }
+};
 </script>
 </body>
 </html>
