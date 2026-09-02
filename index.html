@@ -391,6 +391,13 @@ function startRealtimeListener() {
       var obj = d.data(); obj.id = d.id;
       allEvents.push(obj);
     });
+    allEvents.sort(function(a,b){
+      if(a.date !== b.date) return a.date < b.date ? -1 : 1;
+      var ta = a.time || "99:99";
+      var tb = b.time || "99:99";
+      if(ta !== tb) return ta < tb ? -1 : 1;
+      return 0;
+    });
 
     // 첫 로드가 아닐 때만 새 일정 알림
     if (!isFirstLoad) {
@@ -606,6 +613,7 @@ function renderCal() {
   for(d=1;d<=total;d++){
     dateStr=prefix+"-"+(d<10?"0":"")+d;
     devs=allEvents.filter(function(e){ var end=e.dateEnd||e.date; return e.date<=dateStr && end>=dateStr; });
+    devs.sort(function(a,b){ var ta=a.time||"99:99", tb=b.time||"99:99"; return ta<tb?-1:(ta>tb?1:0); });
     var dow=(new Date(cy,cm,d)).getDay();
     cell=document.createElement("div");
     cell.className="cday"+(today.getFullYear()===cy&&today.getMonth()===cm&&today.getDate()===d?" today":"");
