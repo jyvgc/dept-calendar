@@ -32,7 +32,7 @@ header h1{font-size:1rem;}
 .chead{display:grid;grid-template-columns:repeat(7,1fr);background:#1a56db;}
 .chead span{text-align:center;padding:8px 2px;font-size:.72rem;font-weight:700;color:#fff;}
 .cbody{display:grid;grid-template-columns:repeat(7,1fr);}
-.cday{min-height:60px;min-width:0;overflow:hidden;border-right:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;padding:4px 2px;cursor:pointer;}
+.cday{min-height:60px;min-width:0;overflow:visible;border-right:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;padding:4px 2px;cursor:pointer;}
 .cday:hover{background:#f0f4ff;}
 .cday:nth-child(7n){border-right:none;}
 .cday.other .dn{color:#cbd5e1;}
@@ -629,25 +629,12 @@ function renderCal() {
       hdot.style.cursor="default";
       cell.appendChild(hdot);
     }
-    for(i=0;i<Math.min(devs.length,3);i++){
+    for(i=0;i<devs.length;i++){
       dot=document.createElement("div");
       dot.className="edot t-"+(devs[i].type||"other");
       dot.textContent=devs[i].title;
       (function(id){ dot.onclick=function(e){e.stopPropagation();openView(id);}; })(devs[i].id);
       cell.appendChild(dot);
-    }
-    if(devs.length>3){
-      var pillWrap=document.createElement("div");
-      pillWrap.className="epills";
-      for(i=3;i<devs.length;i++){
-        var pill=document.createElement("div");
-        pill.className="epill t-"+(devs[i].type||"other");
-        pill.textContent=devs[i].title.substring(0,2);
-        pill.title=devs[i].title;
-        (function(id){ pill.onclick=function(e){e.stopPropagation();openView(id);}; })(devs[i].id);
-        pillWrap.appendChild(pill);
-      }
-      cell.appendChild(pillWrap);
     }
     body.appendChild(cell);
   }
